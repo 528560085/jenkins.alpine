@@ -1,0 +1,43 @@
+FROM alpine:02
+#ADD jdk.tar.gz /usr/local
+ADD jdk-8u281-linux-x64.tar.gz /usr/local
+WORKDIR /usr/local/
+COPY glibc-2.33-r0.apk /usr/local/
+COPY glibc-bin-2.33-r0.apk  /usr/local/
+COPY glibc-i18n-2.33-r0.apk  /usr/local/
+
+RUN apk --no-cache add ca-certificates && \
+    apk add  wget && \
+    wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
+    apk add glibc-2.33-r0.apk glibc-bin-2.33-r0.apk glibc-i18n-2.33-r0.apk && \
+    rm -rf /var/cache/apk/* glibc-2.33-r0.apk glibc-bin-2.33-r0.apk glibc-i18n-2.33-r0.apk 
+# java
+ENV JAVA_HOME=/usr/local/jdk1.8.0_281
+ENV CLASSPATH=$JAVA_HOME/bin
+ENV PATH=.:$JAVA_HOME/bin:$PATH
+CMD ["java","-version"]
+# maven
+
+ADD apache-maven-3.6.3-bin.tar.gz /usr/local/
+ENV MAVEN_HOME=/usr/local/apache-maven-3.6.3
+ENV PATH $PATH:$MAVEN_HOME/bin:$MAVEN_HOME/bin
+CMD ["mvn","-v"]
+# tomcat jenkins
+
+RUN apk add git && apk add lsof
+WORKDIR /tmp
+ADD apache-tomcat-9.0.44.tar.gz /usr/local/
+
+ENV CATALINA_HOME /usr/local/apache-tomcat-9.0.44
+ENV CLASSPATH=$JAVA_HOME/lib/
+ENV PATH $PATH:$CATALINA_HOME/bin:$JAVA_HOME/bin
+ENV LANG en_US.UTF-8
+ENV TZ=Asia/Shanghai
+# jenkins
+ADD jenkins.war /usr/local/apache-tomcat-9.0.44/webapps/
+
+WORKDIR /usr/local/apache-tomcat-9.0.44/bin/
+ENV PATH /usr/local/apache-tomcat-9.0.44/bin:$PATH
+CMD ["catalina.sh", "run"]
+EXPOSE 8080
+
